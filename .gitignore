@@ -1,0 +1,30 @@
+# --- Python Environment ---
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.env
+.venv
+
+# --- SentinelLog Data  ---
+models/
+data/
+logs/
+
+# --- Temporary/State Files ---
+*.pkl
+*.bin
+*.onnx
+*.log
+
+# --- Editor & OS Files ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- Build & Distribution ---
+dist/
+build/
+*.egg-info/
