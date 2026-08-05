@@ -1,30 +1,38 @@
+# --- Security & Secrets ---
+.env
+secret.txt
+# No Slack URLs or API keys should ever be committed
+
+# --- Large AI Models (Crucial) ---
+# We do not push weights; we push the script to download them.
+models/
+*.onnx
+*.bin
+
+# --- Serialized AI States ---
+# These contain specific user data baselines.
+*.pkl
+
+# --- Large Datasets ---
+# 10k logs and labels are too big for a clean repo.
+data/
+
+# --- Local Logs ---
+# Don't push your test access logs.
+*.log
+access.log
+test_stream.log
+
 # --- Python Environment ---
 __pycache__/
 *.py[cod]
 *$py.class
 venv/
 env/
-.env
 .venv
 
-# --- SentinelLog Data  ---
-models/
-data/
-logs/
-
-# --- Temporary/State Files ---
-*.pkl
-*.bin
-*.onnx
-*.log
-
-# --- Editor & OS Files ---
+# --- Editor & OS ---
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
-
-# --- Build & Distribution ---
-dist/
-build/
-*.egg-info/
