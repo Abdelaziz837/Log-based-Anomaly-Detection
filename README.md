@@ -94,11 +94,3 @@ Files & layout
 
 Contact / Maintainers
 - Maintained by: abdelaziz837 (GitHub: @Abdelaziz837)
-
-Next steps
-- I committed `scripts/evaluate.py` support for generator outputs and this README to the repository.
-- If you'd like, I can:
-  - Add a short example `config/nginx.ini` and `.env.example` to the repo.
-  - Add a small `tests/evaluate_smoke.sh` that runs evaluate against a tiny sample for CI.
-
-If you want any wording changes, or want me to add the config example and smoke test, tell me and I will commit them now.
