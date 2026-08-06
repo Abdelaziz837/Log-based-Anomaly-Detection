@@ -2,7 +2,7 @@ import asyncio
 from ingestors.file_tailer import AsyncTailer
 
 async def run_test():
-    # We will watch a file called 'access.log' in the current folder
+    
     log_file = "access.log"
     tailer = AsyncTailer(log_file)
 

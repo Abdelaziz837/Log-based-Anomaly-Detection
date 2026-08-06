@@ -12,9 +12,23 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Now access them using os.getenv
+env_path = os.getenv("TARGET_LOG_PATH")
+local_fallback = os.path.join(os.getcwd(), "access.log")
+docker_default = "/var/log/sentinel/access.log"
+
+if env_path:
+    LOG_PATH = env_path
+elif os.path.exists(local_fallback):
+    LOG_PATH = local_fallback
+else:
+    LOG_PATH = docker_default
+
+print(f"[*] SentinelLog is searching for logs at: {LOG_PATH}")
+
+
 SLACK_URL = os.getenv("SLACK_WEBHOOK_URL")
-LOG_PATH = os.getenv("TARGET_LOG_PATH", "access.log") # Fallback to access.log if not set
 WARMUP = int(os.getenv("MIN_WARMUP_SIZE", 200))
+print(f"[DEBUG] INTERNAL CONTAINER LOG_PATH IS: {os.path.abspath(LOG_PATH)}")
 
 
 def ml_engine_worker(log_queue):
@@ -23,11 +37,18 @@ def ml_engine_worker(log_queue):
     embedder = LogEmbedder()
     detector = AnomalyDetector(min_warmup_size=WARMUP)
 
-    if not SLACK_URL:
-        print("[!] Warning : Slack_webhook_URL is not found , ALerts will appear in the terminal ")
+    slack_url = os.getenv("SLACK_WEBHOOK_URL")
+    alerter = None
+    if slack_url and slack_url.strip():
+        try:
+            
+            alerter = SlackAlerter(slack_url)
+            print("[*] Slack Alerter initialized.")
+        except Exception as e:
+            print(f"[!] Could not initialize Alerter: {e}")
     else:
-        alerter = SlackAlerter(SLACK_URL) # Initialize Alerter
-    
+        print("[!] Warning: SLACK_WEBHOOK_URL is not found. Alerts will appear in terminal only.")
+
     print("[*] ML Brain is ready. Waiting for logs...")
 
     while True:
@@ -37,12 +58,20 @@ def ml_engine_worker(log_queue):
 
             p = parser.parse(raw_line)
             v = embedder.embed(p['template_str'])
-            status = detector.process(v, p['params'], p['template_id'])
+            status = detector.process(v, p['raw_params'], p['template_id'])
             
             if status == -1:
                 print(f"\n[!!!] ANOMALY DETECTED [!!!]")
-                # TRIGGER THE SLACK ALERT
-                alerter.send_anomaly(raw_line, p['template_str'])
+                print(f"Log: {raw_line}")
+                               
+                
+                if alerter is not None:
+                    try:
+                        alerter.send_anomaly(raw_line,p['template_str'])
+                    except Exception as e:
+                        print(f"[!] Failed to send alert: {e}")
+                
+                print("-" * 30)
             
         except Exception as e:
             print(f"[!] Brain Error: {e}")
@@ -57,7 +86,7 @@ async def main():
 
     # Start the Ear (Tailer)
     # Change 'access.log' to your actual log file path
-    tailer = AsyncTailer("access.log")
+    tailer = AsyncTailer(LOG_PATH)
     
     print("[*] SentinelLog Sidecar is LIVE.")
     try:

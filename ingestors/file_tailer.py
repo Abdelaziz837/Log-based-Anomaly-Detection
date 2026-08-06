@@ -6,27 +6,38 @@ class AsyncTailer:
         self.file_path = file_path
 
     async def tail(self):
+      
         while not os.path.exists(self.file_path):
-            await asyncio.sleep(1)
+            print(f"[*] [DOCKER DEBUG] Waiting for file at {self.file_path}...")
+            await asyncio.sleep(2)
 
-        # Using standard 'r' mode
-        with open(self.file_path, 'r', encoding='utf-8', errors='ignore') as f:
-            # Jump to end initially
-            f.seek(0, os.SEEK_END)
-            last_pos = f.tell()
+        print(f"[*] [DOCKER DEBUG] Found file! Internal path: {os.path.abspath(self.file_path)}")
+        
+        
+        last_pos = 0 
+        
+        while True:
+            try:
+                # FORCE a refresh of the file stats
+                stats = os.stat(self.file_path)
+                curr_size = stats.st_size
 
-            while True:
-                line = f.readline()
-                if not line:
-                    await asyncio.sleep(0.1)
-                    # Check if file was truncated/wiped
-                    if os.path.exists(self.file_path):
-                        curr_size = os.path.getsize(self.file_path)
-                        if curr_size < last_pos:
-                            print("[!] Log reset detected. Rewinding...")
-                            f.seek(0)
-                        last_pos = f.tell()
-                    continue
+                if curr_size > last_pos:
+                    with open(self.file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                        f.seek(last_pos)
+                        chunk = f.read(curr_size - last_pos)
+                        if chunk:
+                            for line in chunk.splitlines():
+                                if line.strip():
+                                    yield line.strip()
+                        last_pos = stats.st_size
+                elif curr_size < last_pos:
+                    print("[!] [DOCKER DEBUG] Log reset detected (file truncated).")
+                    last_pos = 0
                 
-                yield line.strip()
-                last_pos = f.tell()
+                
+                await asyncio.sleep(0.5)
+                
+            except Exception as e:
+                print(f"[!] [DOCKER DEBUG] Read Error: {e}")
+                await asyncio.sleep(1)

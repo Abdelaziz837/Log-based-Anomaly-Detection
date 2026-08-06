@@ -16,23 +16,23 @@ class AnomalyDetector:
         self.is_trained = False
         self.min_warmup_size = min_warmup_size 
         
-        # Sliding training windows (maxlen=1000) representing current baseline context
+        
         self.training_sem = deque(maxlen=1000)
         self.training_met = deque(maxlen=1000)
         self.training_hist = deque(maxlen=1000)
         
         self.processed_since_train = 0
         
-        # Track sliding window of size N strictly per IP address
+       
         self.ip_histories = defaultdict(lambda: deque(maxlen=window_size))
         
         self.thresholds = {"sem": -1.0, "met": -1.0, "hist": -1.0}
 
     def process(self, semantic_vector, raw_params, template_id):
-        # 1. Extract IP Address (index 0)
+        
         ip_address = raw_params[0] if len(raw_params) > 0 else "unknown"
 
-        # 2. Metric Extraction: Isolate Status and Bytes
+        
         nums = []
         for p in raw_params:
             try:
@@ -51,7 +51,7 @@ class AnomalyDetector:
 
         met_vec = np.array([status, bytes_sent], dtype=float)
 
-        # 3. Update IP history window and extract personal statistical features
+        
         self.ip_histories[ip_address].append((status, template_id, bytes_sent))
         history_list = list(self.ip_histories[ip_address])
         h_len = len(history_list)
@@ -74,10 +74,10 @@ class AnomalyDetector:
             
             if len(self.training_sem) >= self.min_warmup_size:
                 self._train()
-            return 1 # Normal during warmup
+            return 1 
 
         
-        # Evaluate Experts
+       
         s_hist = self.expert_history.score_samples(hist_vec.reshape(1, -1))[0]
         is_hist_anom = s_hist < self.thresholds["hist"]
 
@@ -90,13 +90,13 @@ class AnomalyDetector:
         # Final anomaly status
         is_anomalous = is_hist_anom or is_met_anom or is_sem_anom
 
-        # Only append to moving training windows if log is classified as normal
+        
         if not is_anomalous:
             self.training_sem.append(semantic_vector)
             self.training_met.append(met_vec)
             self.training_hist.append(hist_vec)
 
-        # 3. Dynamic Retraining Check
+        
         self.processed_since_train += 1
         if self.processed_since_train >= self.retrain_interval:
             self._train()

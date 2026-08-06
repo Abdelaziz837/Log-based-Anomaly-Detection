@@ -63,10 +63,10 @@ class LogParser:
                 accepted.append((start, val, tag))
                 mask[start:end] = b'\x01' * (end - start)
 
-        # 3. Final Ordering (Appearance Order)
+       
         accepted.sort() 
         
-        # Align raw_params and tags into ordered lists
+       
         raw_params = [p[1] for p in accepted]
         ordered_tags = [p[2] for p in accepted]
 
@@ -75,7 +75,7 @@ class LogParser:
             "template_id": t_id,
             "template_str": t_str,     # Contains placeholders like <ID_IP> for the Embedder
             "raw_params": raw_params,  # All extracted values
-            "tags": ordered_tags       # All corresponding tags (now a LIST, not a set)
+            "tags": ordered_tags       # All corresponding tags 
         }
         
     def save_state(self):

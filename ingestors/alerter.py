@@ -6,39 +6,29 @@ class SlackAlerter:
         self.webhook_url = webhook_url
 
     def send_anomaly(self, log_line, template):
-        if not self.webhook_url:
-            return
-
         payload = {
             "blocks": [
                 {
                     "type": "header",
-                    "text": {"type": "plain_text", "text": "🚨 LogSheild: Anomaly Detected"}
+                    "text": {"type": "plain_text", "text": "🚨 SentinelLog: Anomaly Detected"}
                 },
                 {
                     "type": "section",
-                    "text": {
-                        "type": "mrkdwn", 
-                        "text": f"*Raw Log:*\n`{log_line}`"
-                    }
-                },
-                {
-                    "type": "section",
-                    "fields": [
-                        {"type": "mrkdwn", "text": f"*Template ID:*\nCluster Mode"},
-                        {"type": "mrkdwn", "text": f"*Pattern:*\n`{template[:50]}...`"}
-                    ]
+                    "text": {"type": "mrkdwn", "text": f"*Raw Log:*\n`{log_line}`"}
                 },
                 {
                     "type": "context",
-                    "elements": [
-                        {"type": "mrkdwn", "text": "📌 *Reason:* Statistical outlier detected by Expert Committee."}
-                    ]
+                    "elements": [{"type": "mrkdwn", "text": f"📍 *Pattern:* {template}"}]
                 }
             ]
         }
-        
         try:
-            requests.post(self.webhook_url, data=json.dumps(payload), headers={'Content-Type': 'application/json'})
+            response = requests.post(
+                self.webhook_url, 
+                data=json.dumps(payload),
+                headers={'Content-Type': 'application/json'}
+            )
+            if response.status_code != 200:
+                print(f"[!] Slack returned error: {response.status_code}, {response.text}")
         except Exception as e:
-            print(f"[!] Failed to send Slack alert: {e}")
+            print(f"[!] Failed to connect to Slack: {e}")
